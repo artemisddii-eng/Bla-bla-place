@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTS Course – Interactive Lesson</title>
+<style>
+:root {
+  --purple-main: #8a2be2;
+  --purple-light: #b388ff;
+  --dark-bg: #0f0c1b;
+  --card-bg: #1d1830;
+  --text-light: #f3efff;
+  --accent-green: #00ffcc;
+}
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #050211 0%, #150b24 100%);
+  color: var(--text-light);
+  margin: 0; padding: 20px; min-height: 100vh;
+}
+.container { max-width: 1050px; margin: 0 auto; padding-bottom: 120px; }
+.lesson-page { display: none; }
+.lesson-page.active-page { display: block; }
+
+/* --- СТИЛИ БЛОКНОТА (NOTEPAD) --- */
+#floating-notepad {
+  position: fixed; top: 20px; right: 20px; width: 280px; height: 200px;
+  background: rgba(29, 24, 48, 0.95); border: 2px solid var(--purple-light);
+  border-radius: 12px; box-shadow: 0 10px 30px rgba(138, 43, 226, 0.3);
+  z-index: 9999; display: flex; flex-direction: column; overflow: hidden;
+  resize: both;
+}
+#floating-notepad.collapsed {
+  width: 45px !important; height: 45px !important; border-radius: 50%;
+  overflow: hidden; justify-content: center; align-items: center; cursor: pointer;
+  resize: none;
+}
+.notepad-header { 
+  background: var(--purple-main); color: white; padding: 8px 12px;
+  cursor: move; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between;
+}
+#floating-notepad.collapsed .notepad-header {
+  padding: 0; background: transparent; height: 100%; width: 100%;
+  display: flex; justify-content: center; align-items: center; cursor: pointer;
+}
+#floating-notepad.collapsed .notepad-textarea { display: none !important; }
+.notepad-textarea { 
+  flex-grow: 1; background: transparent; border: none; color: #fff;
+  padding: 10px; font-size: 14px; resize: none; outline: none; 
+}
+
+/* --- СТРАНИЦА 1: ЛИНЕЙНЫЙ МАТЧИНГ КЛИКАМИ --- */
+.matching-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: rgba(29, 24, 48, 0.3); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(179, 136, 255, 0.1); }
+.matching-title { font-size: 16px; font-weight: bold; color: var(--purple-light); margin: 0; }
+.matching-container { display: flex; justify-content: space-between; gap: 40px; position: relative; }
+.match-column { display: flex; flex-direction: column; gap: 12px; width: 48%; min-height: 100px; }
+.match-item { 
+  min-height: 52px; background: var(--card-bg); border: 2px solid rgba(179, 136, 255, 0.25);
+  padding: 10px 15px; border-radius: 8px; font-size: 14px; text-align: center; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box;
+  transition: all 0.2s; width: 100%;
+}
+.match-item:hover:not(.matched-item) { border-color: var(--purple-light); background: #231c3a; }
+.match-item.selected-item { border-color: var(--accent-green); box-shadow: 0 0 10px rgba(0, 255, 204, 0.4); background: #16292b; }
+
+.match-item.matched-item { cursor: default; font-weight: bold; width: 50%; }
+.match-row-completed { display: flex; width: 100%; gap: 10px; margin-bottom: 12px; transition: all 0.3s; }
+
+.ru-text { display: none; color: #fff; font-size: 14px; text-align: center; width: 100%; }
+.ru-visible .ru-text { display: block; }
+.action-btn { background: var(--purple-main); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+.action-btn:hover { background: var(--purple-light); }
+
+/* --- СТРАНИЦА 2: ДИЗАЙН КАРТОЧЕК (СКРИН 4) --- */
+.profiles-row { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 25px; }
+.profile-card-minimal { 
+  background: var(--card-bg); border: 2px solid rgba(179, 136, 255, 0.2); border-radius: 15px; 
+  padding: 20px 10px; width: 23%; text-align: center; box-sizing: border-box; cursor: pointer;
+  transition: transform 0.6s; transform-style: preserve-3d; min-height: 180px; display: flex; flex-direction: column; justify-content: center;
+}
+.profile-card-minimal.is-flipped { transform: rotateY(180deg); }
+.minimal-avatar-circle { width: 85px; height: 85px; border-radius: 50%; border: 3px solid var(--purple-main); object-fit: cover; margin: 0 auto 10px auto; display: block; }
+.minimal-name { font-weight: bold; font-size: 16px; color: var(--purple-light); margin-bottom: 4px; }
+.minimal-subtext { font-size: 12px; color: #7a6fa6; margin: 0; }
+.card-back-text { display: none; transform: rotateY(180deg); color: #fff; font-size: 13px; padding: 10px; line-height: 1.4; }
+.profile-card-minimal.is-flipped .minimal-avatar-circle,
+.profile-card-minimal.is-flipped .minimal-name,
+.profile-card-minimal.is-flipped .minimal-subtext { display: none; }
+.profile-card-minimal.is-flipped .card-back-text { display: block; }
+
+.quote-question-block { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-left: 5px; }
+.quote-icon-purple { color: #a855f7; font-size: 22px; }
+.quote-text-main { font-size: 15px; font-weight: bold; color: #e9d5ff; margin: 0; }
+
+.minimal-builder-grid { display: flex; flex-direction: column; gap: 15px; background: transparent; }
+.labels-selectors-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 15px; }
+.selector-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+.selector-title-label { font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.selector-group select { width: 100%; padding: 10px; background: #110c24; border: 1px solid #4b3d73; border-radius: 6px; color: #fff; font-size: 13px; outline: none; }
+
+.final-sentence-container { background: #0c081d; border-left: 4px solid #a855f7; padding: 15px 20px; border-radius: 0 8px 8px 0; min-height: 24px; }
+#sentence-result { font-size: 15px; font-weight: 500; color: #fff; line-height: 1.5; outline: none; }
+#sentence-result.success-glow { border-left-color: var(--accent-green); box-shadow: 0 0 20px rgba(0, 255, 204, 0.4); background: #061f16; }
+
+/* Анимация конфетти */
+.confetti-piece { position: fixed; width: 10px; height: 10px; background: #fff; z-index: 10000; top: -10px; border-radius: 50%; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(105vh) rotate(360deg); } }
+
+/* СТРАНИЦА 3 */
+.ad-poster { background: #110b21; border: 2px solid var(--purple-main); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px; }
+.prompts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.prompt-card { background: var(--card-bg); border: 1px solid rgba(179, 136, 255, 0.2); border-radius: 10px; padding: 12px; text-align: center; font-weight: bold; color: var(--purple-light); cursor: pointer; }
+.prompt-card.active { background: var(--purple-main); color: white; border-color: var(--accent-green); }
+.constructor-area { background: rgba(29, 24, 48, 0.6); border-radius: 16px; padding: 20px; border: 1px solid rgba(179, 136, 255, 0.1); margin-top: 20px; }
+.result-display-p3 { margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 18px; min-height: 40px; background: #110b21; border-left: 5px solid var(--accent-green); padding-left: 15px; }
+</style>
+</head>
+<body>
+
+<!-- ПЛАВАЮЩИЙ БЛОКНОТ -->
+<div id="floating-notepad">
+  <div class="notepad-header" id="notepad-grab">
+    <span id="notepad-title">✍️ Заметки</span>
+  </div>
+  <textarea class="notepad-textarea" id="notepad-text" placeholder="Пиши сюда перевод или важные слова из урока..."></textarea>
+</div>
+
+<div class="container">
+
+  <!-- ================= СТРАНИЦА 1 ================= -->
+  <div id="page1" class="lesson-page active-page">
+    
+    <!-- Шапка задания строго по первому скриншоту -->
+    <div class="matching-header-row">
+      <div class="matching-title">Соедини английские фразы с их переводами:</div>
+      <button class="action-btn" id="toggle-translations-btn">Показать варианты перевода</button>
+    </div>
+
+    <!-- Контейнер для выполненных (состыкованных) пар -->
+    <div id="matched-pairs-container" style="width: 100%; display: flex; flex-direction: column; margin-bottom: 15px;"></div>
+
+    <div class="matching-container" id="matching-block">
+      <!-- Левая колонка: Английский -->
+      <div class="match-column" id="en-column" data-side="en">
+        <div class="match-item" data-index="1">watching movies or Netflix</div>
+        <div class="match-item" data-index="2">spending a lot of time exercising</div>
+        <div class="match-item" data-index="3">watching lighthearted entertainment videos</div>
+        <div class="match-item" data-index="4">editing one's travel videos</div>
+        <div class="match-item" data-index="5">playing first-person shooters</div>
+        <div class="match-item" data-index="6">playing strategy PC games</div>
+        <div class="match-item" data-index="7">hosting small gatherings</div>
+        <div class="match-item" data-index="8">frequently visiting art galleries</div>
+        <div class="match-item" data-index="9">traveling the world</div>
+        <div class="match-item" data-index="10">wind down</div>
+        <div class="match-item" data-index="11">stay in shape for dancing</div>
+        <div class="match-item" data-index="12">build incredible stamina</div>
+        <div class="match-item" data-index="13">achieve total "brain silence"</div>
+        <div class="match-item" data-index="14">recharge after busy promotions</div>
+        <div class="match-item" data-index="15">enjoy favourite sport from the first row</div>
+        <div class="match-item" data-index="16">find beauty in ordinary moments</div>
+        <div class="match-item" data-index="17">seek quiet comfort and healing</div>
+        <div class="match-item" data-index="18">enjoy love for vintage aesthetics</div>
+      </div>
+      <!-- Правая колонка: Русский -->
+      <div class="match-column ru-hidden" id="ru-column" data-side="ru">
+        <div class="match-item" data-index="13"><span class="ru-text">достигать полной «тишины в голове»</span></div>
+        <div class="match-item" data-index="5"><span class="ru-text">играть в шутеры от первого лица</span></div>
+        <div class="match-item" data-index="1"><span class="ru-text">смотреть фильмы или Netflix</span></div>
+        <div class="match-item" data-index="8"><span class="ru-text">часто посещать художественные галереи</span></div>
+        <div class="match-item" data-index="12"><span class="ru-text">развить невероятную выносливость</span></div>
+        <div class="match-item" data-index="15"><span class="ru-text">наслаждаться любимым спортом из первого ряда</span></div>
+        <div class="match-item" data-index="11"><span class="ru-text">оставаться в форме для танцев</span></div>
+        <div class="match-item" data-index="4"><span class="ru-text">монтировать свои видео из путешествий</span></div>
+        <div class="match-item" data-index="10"><span class="ru-text">расслабиться и снять напряжение</span></div>
+        <div class="match-item" data-index="16"><span class="ru-text">находить красоту в повседневных моментах</span></div>
+        <div class="match-item" data-index="3"><span class="ru-text">смотреть легкие развлекательные видео</span></div>
+        <div class="match-item" data-index="14"><span class="ru-text">восстанавливать силы после плотного промоушена</span></div>
+        <div class="match-item" data-index="17"><span class="ru-text">искать душевный покой и исцеление</span></div>
+        <div class="match-item" data-index="6"><span class="ru-text">играть в стратегические компьютерные игры</span></div>
+        <div class="match-item" data-index="2"><span class="ru-text">проводить много времени за тренировками</span></div>
+        <div class="match-item" data-index="7"><span class="ru-text">устраивать небольшие посиделки</span></div>
+        <div class="match-item" data-index="9"><span class="ru-text">путешествовать по миру</span></div>
+        <div class="match-item" data-index="18"><span class="ru-text">наслаждаться своей любовью к винтажной эстетике</span></div>
+      </div>
+    </div>
+
+    <!-- Кнопки управления внизу справа -->
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin-top: 25px; margin-bottom: 30px;">
+      <button class="action-btn" id="reset-page1-btn" style="background: #2a1b4e; font-size: 13px; width: 220px;">Начать заново</button>
+      <button class="action-btn" id="cheat-page1-btn" style="background: #1b4e3b; font-size: 13px; width: 220px;">Показать правильные ответы</button>
+    </div>
+  </div>
+
+  <!-- ================= СТРАНИЦА 2 ================= -->
+  <div id="page2" class="lesson-page">
+    <!-- Профайлы участников строго по скриншоту 4 -->
+    <div class="profiles-row">
+      <div class="profile-card-minimal">
+        <img src="v.jpg" alt="V" class="minimal-avatar-circle">
+        <div class="minimal-name">V (Taehyung)</div>
+        <p class="minimal-subtext">Free time?</p>
+        <div class="card-back-text">Hobbies: Photography, art galleries, jazz music.</div>
+      </div>
+      <div class="profile-card-minimal">
+        <img src="jimin.jpg" alt="Jimin" class="minimal-avatar-circle">
+        <div class="minimal-name">Jimin</div>
+        <p class="minimal-subtext">Free time?</p>
+        <div class="card-back-text">Hobbies: Traveling, dancing, watching Netflix.</div>
+      </div>
+      <div class="profile-card-minimal">
+        <img src="suga.jpg" alt="Suga" class="minimal-avatar-circle">
+        <div class="minimal-name">Suga (Yoongi)</div>
+        <p class="minimal-subtext">Free time?</p>
+        <div class="card-back-text">Hobbies: Basketball, PC gaming, whisky, cooking.</div>
+      </div>
+      <div class="profile-card-minimal">
+        <img src="jungkook.jpg" alt="Jungkook" class="minimal-avatar-circle">
+        <div class="minimal-name">Jungkook</div>
+        <p class="minimal-subtext">Free time?</p>
+        <div class="card-back-text">Hobbies: Boxing, Jiu-Jitsu, video editing, Bam.</div>
+      </div>
+    </div>
+
+    <!-- Вопрос-цитата со скриншота 4 -->
+    <div class="quote-question-block">
+      <span class="quote-icon-purple">💬</span>
+      <p class="quote-text-main">"What do the members of BTS like to do in their free time?"</p>
+    </div>
+
+    <!-- Конструктор предложений -->
+    <div class="minimal-builder-grid">
+      <div class="labels-selectors-row">
+        
+        <div class="selector-group" style="flex: 1; min-width: 130px;">
+          <span class="selector-title-label">Мембер:</span>
+          <select id="s2-member" onchange="updateSentenceBuilder()">
+            <option value="">-- Выбери --</option>
+            <option value="V">V</option>
+            <option value="Jimin">Jimin</option>
+            <option value="Suga">Suga</option>
+            <option value="Jungkook">Jungkook</option>
+          </select>
+        </div>
+
+        <div class="selector-group" style="flex: 2; min-width: 240px;">
+          <span class="selector-title-label">Хобби:</span>
+          <select id="s2-hobby" onchange="updateSentenceBuilder()">
+            <option value="">-- Выбери --</option>
+            <!-- Старые душевные варианты -->
+            <option value="likes playing with his dog Bam">likes playing with his dog Bam</option>
+            <option value="likes drinking whisky">likes drinking whisky</option>
+            <option value="likes cooking delicious food">likes cooking delicious food</option>
+            <option value="likes lying on the sofa and doing nothing">likes lying on the sofa and doing nothing</option>
+            <option value="likes buying expensive clothes">likes buying expensive clothes</option>
+            <!-- Новые адаптированные варианты (укороченные по твоей схеме) -->
+            <option value="likes watching movies or Netflix">likes watching movies or Netflix</option>
+            <option value="likes spending a lot of time exercising">likes spending a lot of time exercising</option>
+            <option value="likes watching lighthearted entertainment videos">likes watching lighthearted entertainment videos</option>
+            <option value="likes training in boxing and Jiu-Jitsu">likes training in boxing and Jiu-Jitsu</option>
+            <option value="likes editing one's travel videos">likes editing one's travel videos</option>
+            <option value="likes playing first-person shooters">likes playing first-person shooters</option>
+            <option value="likes playing strategy PC games">likes playing strategy PC games</option>
+            <option value="likes regularly traveling to watch live NBA games">likes regularly traveling to watch live NBA games</option>
+            <option value="likes hosting small gatherings">likes hosting small gatherings</option>
+            <option value="likes taking photos">likes taking photos</option>
+            <option value="likes frequently visiting art galleries">likes frequently visiting art galleries</option>
+            <option value="likes traveling the world">likes traveling the world</option>
+            <option value="likes listening to classical jazz music">likes listening to classical jazz music</option>
+          </select>
+        </div>
+
+        <div class="selector-group" style="flex: 1.5; min-width: 180px;">
+          <span class="selector-title-label">Какое оно:</span>
+          <select id="s2-desc" onchange="updateSentenceBuilder()">
+            <option value="">-- Выбери --</option>
+            <!-- Старые варианты -->
+            <option value="funny">funny</option>
+            <option value="relaxing">relaxing</option>
+            <option value="very important">very important</option>
+            <option value="the best thing in the world">the best thing in the world</option>
+            <!-- Новые варианты без тавтологии -->
+            <option value="a peaceful escape">a peaceful escape</option>
+            <option value="a quiet, introverted hobby">a quiet, introverted hobby</option>
+            <option value="make beautiful moments with friends">make beautiful moments with friends</option>
+            <option value="peaceful and artistic">peaceful and artistic</option>
+          </select>
+        </div>
+
+        <div class="selector-group" style="flex: 1.5; min-width: 180px;">
+          <span class="selector-title-label">Зачем:</span>
+          <select id="s2-purpose" onchange="updateSentenceBuilder()">
+            <option value="">-- Выбери --</option>
+            <!-- Старые варианты -->
+            <option value="be a good dog daddy">be a good dog daddy</option>
+            <option value="survive in this stressful world">survive in this stressful world</option>
+            <option value="feed other members">feed other members</option>
+            <option value="rest after concerts">rest after concerts</option>
+            <!-- Новые варианты (укороченные) -->
+            <option value="wind down">wind down</option>
+            <option value="stay in shape for dancing">stay in shape for dancing</option>
+            <option value="build incredible stamina">build incredible stamina</option>
+            <option value="achieve total 'brain silence'">achieve total 'brain silence'</option>
+            <option value="recharge after busy promotions">recharge after busy promotions</option>
+            <option value="enjoy favourite sport from the first row">enjoy favourite sport from the first row</option>
+            <option value="find beauty in ordinary moments">find beauty in ordinary moments</option>
+            <option value="seek quiet comfort and healing">seek quiet comfort and healing</option>
+            <option value="enjoy love for vintage aesthetics">enjoy love for vintage aesthetics</option>
+            <option value="[not needed]">[не требуется]</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Финальное лаконичное поле вывода предложений -->
+      <div class="final-sentence-container">
+        <div id="sentence-result" contenteditable="true" spellcheck="false">Выбери элементы выше, чтобы построить предложение...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= СТРАНИЦА 3 ================= -->
+  <div id="page3" class="lesson-page">
+
+          <h2>Страница 3: Построение вопросов (BTS World Tour 2027)</h2>
+    <p>Выбери подсказку, чтобы понять, какой прямой вопрос нужно задать организаторам вымышленного тура.</p>
+    
+    <div class="ad-poster">
+      <h2 style="color: var(--accent-green); margin:0;">BTS WORLD TOUR 2027</h2>
+      <p style="margin:5px 0 0 0; font-style:italic; color:#aaa;">"Beyond The Scene - The Grand Return"</p>
+    </div>
+
+    <div class="prompts-grid">
+      <div class="prompt-card" onclick="selectPrompt(this, 'dates')">DATES</div>
+      <div class="prompt-card" onclick="selectPrompt(this, 'cities')">CITIES / LOCATIONS</div>
+      <div class="prompt-card" onclick="selectPrompt(this, 'tickets')">TICKET PRICES</div>
+      <div class="prompt-card" onclick="selectPrompt(this, 'setlist')">SETLIST / SONGS</div>
+      <div class="prompt-card" onclick="selectPrompt(this, 'merch')">OFFICIAL MERCH</div>
+    </div>
+
+    <div class="constructor-area">
+      <span class="step-label">Конструктор вопроса (Выбери правильный порядок слов):</span>
+      <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <select id="q-word1" onchange="updateQuestionBuilder()"><option value="">[Слово 1]</option></select>
+        <select id="q-word2" onchange="updateQuestionBuilder()"><option value="">[Слово 2]</option></select>
+        <select id="q-word3" onchange="updateQuestionBuilder()"><option value="">[Слово 3]</option></select>
+        <select id="q-word4" onchange="updateQuestionBuilder()"><option value="">[Слово 4]</option></select>
+        <select id="q-word5" onchange="updateQuestionBuilder()"><option value="">[Слово 5]</option></select>
+      </div>
+
+      <span class="step-label">Твой вопрос:</span>
+      <div class="result-display-p3">
+        <div id="question-result">Сначала выбери категорию (DATES, CITIES...) выше...</div>
+      </div>
+    </div>
+  </div>
+
+</div> <!-- Конец .container -->
+
+<!-- НАВИГАЦИОННАЯ ПАНЕЛЬ -->
+<!-- ИДЕАЛЬНАЯ НЕОНОВАЯ НАВИГАЦИЯ СО СКРИНШОТА -->
+<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; align-items: center; gap: 20px; background: #0f0c1b; border: 2px solid #3a1d70; padding: 6px 24px; border-radius: 30px; box-shadow: 0 0 15px rgba(138, 43, 226, 0.4);">
+  <button id="prev-btn" onclick="changePage(-1)" disabled style="background: transparent; color: #b388ff; border: 2px solid #3a1d70; padding: 6px 18px; font-weight: bold; border-radius: 20px; cursor: pointer; transition: all 0.2s;">◀ Назад</button>
+  <span id="page-num" style="font-size: 13px; color: #a499cc; text-transform: uppercase; letter-spacing: 1px; min-width: 110px; text-align: center;">Страница 1 / 3</span>
+  <button id="next-btn" onclick="changePage(1)" style="background: transparent; color: #b388ff; border: 2px solid #3a1d70; padding: 6px 18px; font-weight: bold; border-radius: 20px; cursor: pointer; transition: all 0.2s;">Далее ▶</button>
+</div>
+
+<script>
+// --- ПЕРЕМЕННЫЕ И НАВИГАЦИЯ ---
+let currentPage = 1;
+const totalPages = 3;
+
+function changePage(direction) {
+  document.getElementById(`page${currentPage}`).classList.remove('active-page');
+  currentPage += direction;
+  document.getElementById(`page${currentPage}`).classList.add('active-page');
+  
+  document.getElementById('prev-btn').disabled = (currentPage === 1);
+  document.getElementById('next-btn').disabled = (currentPage === totalPages);
+  document.getElementById('page-num').innerText = `Страница ${currentPage} из ${totalPages}`;
+}
+
+// --- СИСТЕМНЫЙ ЗВУКОВОЙ ДВИЖОК (БЕЗ ФАЙЛОВ) ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  if (type === 'click') {
+    osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.05);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+  } else if (type === 'error') {
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.25);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+  } else if (type === 'success') {
+    osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // До
+    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // Ми
+    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // Соль
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.4);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+  }
+}
+
+// --- УМНЫЙ БЛОКНОТ ---
+const notepad = document.getElementById('floating-notepad');
+const notepadHeader = document.getElementById('notepad-grab');
+const notepadText = document.getElementById('notepad-text');
+
+if (localStorage.getItem('bts_notepad_text')) {
+  notepadText.value = localStorage.getItem('bts_notepad_text');
+}
+notepadText.addEventListener('input', () => {
+  localStorage.setItem('bts_notepad_text', notepadText.value);
+});
+
+let isDragging = false;
+let startX, startY, initialLeft, initialTop, dragMoved;
+
+notepadHeader.addEventListener('mousedown', (e) => {
+  isDragging = true; dragMoved = false;
+  startX = e.clientX; startY = e.clientY;
+  initialLeft = notepad.offsetLeft; initialTop = notepad.offsetTop;
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - startX; const dy = e.clientY - startY;
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragMoved = true;
+  notepad.style.left = (initialLeft + dx) + 'px';
+  notepad.style.top = (initialTop + dy) + 'px';
+  notepad.style.right = 'auto';
+});
+
+document.addEventListener('mouseup', () => {
+  if (isDragging) {
+    isDragging = false;
+    if (!dragMoved) {
+      playSound('click');
+      notepad.classList.toggle('collapsed');
+    }
+  }
+});
+// --- СТРАНИЦА 1: НЕУБИВАЕМЫЙ МАТЧИНГ КЛИКАМИ ---
+const matchColors = ['#00ffcc', '#ff007f', '#9d4edd', '#ffb703', '#00b4d8', '#e63946', '#4ade80', '#f472b6', '#38bdf8', '#fb7185'];
+let selectedEn = null;
+let selectedRu = null;
+
+const toggleBtn = document.getElementById('toggle-translations-btn');
+const ruColumn = document.getElementById('ru-column');
+
+if (toggleBtn && ruColumn) {
+  toggleBtn.addEventListener('click', () => {
+    playSound('click');
+    ruColumn.classList.toggle('ru-visible');
+    toggleBtn.innerText = ruColumn.classList.contains('ru-visible') ? 'Скрыть варианты перевода' : 'Показать варианты перевода';
+  });
+}
+
+function initClickMatching() {
+  document.querySelectorAll('#matching-block .match-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (item.classList.contains('matched-item') || item.parentElement.id === 'matched-pairs-container') return;
+      
+      playSound('click');
+      const columnId = item.parentElement.id;
+      
+      if (columnId === 'en-column') {
+        document.querySelectorAll('#en-column .match-item').forEach(el => el.classList.remove('selected-item'));
+        item.classList.add('selected-item');
+        selectedEn = item;
+      } else if (columnId === 'ru-column') {
+        document.querySelectorAll('#ru-column .match-item').forEach(el => el.classList.remove('selected-item'));
+        item.classList.add('selected-item');
+        selectedRu = item;
+      }
+      
+      if (selectedEn && selectedRu) {
+        const idxEn = selectedEn.getAttribute('data-index');
+        const idxRu = selectedRu.getAttribute('data-index');
+        
+        if (idxEn === idxRu) {
+          lockAndMovePair(selectedEn, selectedRu);
+        } else {
+          playSound('error');
+          const tempEn = selectedEn;
+          const tempRu = selectedRu;
+          setTimeout(() => {
+            if (tempEn) tempEn.classList.remove('selected-item');
+            if (tempRu) tempRu.classList.remove('selected-item');
+          }, 250);
+          selectedEn = null;
+          selectedRu = null;
+        }
+      }
+    });
+  });
+}
+
+function lockAndMovePair(enItem, ruItem) {
+  const container = document.getElementById('matched-pairs-container');
+  if (!container) return;
+  
+  playSound('success');
+  const row = document.createElement('div');
+  row.className = 'match-row-completed';
+  const color = matchColors[container.children.length % matchColors.length];
+  
+  [enItem, ruItem].forEach(el => {
+    el.classList.remove('selected-item');
+    el.classList.add('matched-item');
+    el.style.borderColor = color;
+    el.style.backgroundColor = color + '13';
+    el.style.boxShadow = `0 0 10px ${color}4d`;
+  });
+  
+  const ruSpan = ruItem.querySelector('.ru-text');
+  if (ruSpan) ruSpan.style.display = 'block';
+  
+  enItem.innerHTML += ' <span style="color:#4ade80;">✓</span>';
+  
+  enItem.parentElement.removeChild(enItem);
+  ruItem.parentElement.removeChild(ruItem);
+  
+  row.appendChild(enItem);
+  row.appendChild(ruItem);
+  container.appendChild(row);
+  
+  selectedEn = null;
+  selectedRu = null;
+  
+  const remaining = document.getElementById('en-column');
+  if (remaining && remaining.children.length === 0) {
+    triggerConfetti();
+  }
+}
+
+// Автоответы (Показать правильные ответы)
+document.getElementById('cheat-page1-btn').addEventListener('click', () => {
+  playSound('success');
+  document.getElementById('reset-page1-btn').click();
+  const enCol = document.getElementById('en-column');
+  const ruCol = document.getElementById('ru-column');
+  if (!enCol || !ruCol) return;
+  
+  const enArr = Array.from(enCol.children).sort((a,b) => a.getAttribute('data-index') - b.getAttribute('data-index'));
+  const ruArr = Array.from(ruCol.children);
+  
+  enArr.forEach(en => {
+    const idx = en.getAttribute('data-index');
+    const ru = ruArr.find(r => r.getAttribute('data-index') === idx);
+    if (ru) lockAndMovePair(en, ru);
+  });
+});
+
+// Начать заново
+document.getElementById('reset-page1-btn').addEventListener('click', () => {
+  playSound('click');
+  const container = document.getElementById('matched-pairs-container');
+  const enCol = document.getElementById('en-column');
+  const ruCol = document.getElementById('ru-column');
+  if (!container || !enCol || !ruCol) return;
+  
+  Array.from(container.children).forEach(row => {
+    const en = row.children[0];
+    const ru = row.children[1];
+    if (en && ru) {
+      [en, ru].forEach(el => {
+        el.classList.remove('matched-item', 'selected-item');
+        el.style = '';
+        const check = el.querySelector('span[style*="color"]');
+        if (check) check.remove();
+        const ruSpan = el.querySelector('.ru-text');
+        if (ruSpan) ruSpan.style.display = '';
+      });
+      enCol.appendChild(en);
+      ruCol.appendChild(ru);
+    }
+  });
+  
+  container.innerHTML = '';
+  selectedEn = null;
+  selectedRu = null;
+  
+  const enArr = Array.from(enCol.children).sort(() => Math.random() - 0.5);
+  const ruArr = Array.from(ruCol.children).sort(() => Math.random() - 0.5);
+  enArr.forEach(item => enCol.appendChild(item));
+  ruArr.forEach(item => ruCol.appendChild(item));
+});
+
+initClickMatching();
+// --- СТРАНИЦА 2: КОНСТРУКТОР ПРЕДЛОЖЕНИЙ ---
+const validCombinations = [
+  // Старые проверенные комбинации со 2 скрина
+  { member: "Jungkook", hobby: "likes playing with his dog Bam", desc: "funny", purpose: "be a good dog daddy" },
+  { member: "Suga", hobby: "likes drinking whisky", desc: "relaxing", purpose: "survive in this stressful world" },
+  { member: "Suga", hobby: "likes cooking delicious food", desc: "very important", purpose: "feed other members" },
+  { member: "Jimin", hobby: "likes lying on the sofa and doing nothing", desc: "the best thing in the world", purpose: "rest after concerts" },
+  { member: "V", hobby: "likes buying expensive clothes", desc: "very important", purpose: "survive in this stressful world" },
+
+  // Новые прокачанные комбинации (укороченные по твоей новой схеме)
+  { member: "Jimin", hobby: "likes watching movies or Netflix", desc: "a peaceful escape", purpose: "wind down" },
+  { member: "Jimin", hobby: "likes spending a lot of time exercising", desc: "very important", purpose: "stay in shape for dancing" },
+  { member: "Jimin", hobby: "likes watching lighthearted entertainment videos", desc: "funny", purpose: "wind down" },
+  { member: "Jungkook", hobby: "likes training in boxing and Jiu-Jitsu", desc: "very important", purpose: "build incredible stamina" },
+  { member: "Jungkook", hobby: "likes editing one's travel videos", desc: "the best thing in the world", purpose: "achieve total 'brain silence'" },
+  { member: "Jungkook", hobby: "likes playing first-person shooters", desc: "a peaceful escape", purpose: "recharge after busy promotions" },
+  { member: "Suga", hobby: "likes playing strategy PC games", desc: "a quiet, introverted hobby", purpose: "achieve total 'brain silence'" },
+  { member: "Suga", hobby: "likes regularly traveling to watch live NBA games", desc: "the best thing in the world", purpose: "enjoy favourite sport from the first row" },
+  { member: "Suga", hobby: "likes hosting small gatherings", desc: "make beautiful moments with friends", purpose: "recharge after busy promotions" },
+  { member: "V", hobby: "likes taking photos", desc: "peaceful and artistic", purpose: "find beauty in ordinary moments" },
+  { member: "V", hobby: "likes frequently visiting art galleries", desc: "peaceful and artistic", purpose: "seek quiet comfort and healing" },
+  { member: "V", hobby: "likes traveling the world", desc: "peaceful and artistic", purpose: "seek quiet comfort and healing" },
+  { member: "V", hobby: "likes listening to classical jazz music", desc: "the best thing in the world", purpose: "enjoy love for vintage aesthetics" }
+];
+
+function updateSentenceBuilder() {
+  const m = document.getElementById('s2-member').value;
+  const h = document.getElementById('s2-hobby').value;
+  const d = document.getElementById('s2-desc').value;
+  const p = document.getElementById('s2-purpose').value;
+  const display = document.getElementById('sentence-result');
+
+  if (!display) return;
+  display.classList.remove('success-glow');
+
+  if (!m && !h && !d && !p) {
+    display.innerText = "Выбери элементы выше, чтобы построить предложение...";
+    return;
+  }
+
+  let partMember = m || '[_____]';
+  let partHobby = h || '[_____]';
+  let partDesc = d ? `, because for him it is ${d}` : ' [_____]';
+  if (d === 'funny' || d === 'very important' || d === 'relaxing' || d === 'the best thing in the world') {
+    partDesc = `, because for him it is ${d}`;
+  }
+
+  let partPurpose = '';
+  if (p && p !== '[not needed]') {
+    partPurpose = `. I think it helps him to ${p}`;
+  } else if (p === '[not needed]') {
+    partPurpose = '.';
+  } else {
+    partPurpose = '. I think it helps him to [_____].';
+  }
+
+  let sentence = `${partMember} ${partHobby}${partDesc}${partPurpose}`;
+  sentence = sentence.replace(/\s+/g, ' ').replace(/\.\./g, '.');
+  display.innerText = sentence;
+
+  if (m && h && d && p) {
+    const isCorrectFact = validCombinations.some(comb => 
+      comb.member === m && comb.hobby === h && comb.desc === d && comb.purpose === p
+    );
+    if (isCorrectFact) {
+      playSound('success');
+      display.classList.add('success-glow');
+      triggerConfetti();
+    }
+  }
+}
+
+document.querySelectorAll('.profile-card-minimal').forEach(card => {
+  card.addEventListener('click', () => {
+    playSound('click');
+    card.classList.toggle('is-flipped');
+  });
+});
+
+function triggerConfetti() {
+  const colors = ['#00ffcc', '#ff007f', '#9d4edd', '#ffb703', '#00b4d8'];
+  for (let i = 0; i < 80; i++) {
+    const confetti = document.createElement('div');
+    confetti.classList.add('confetti-piece');
+    confetti.style.left = Math.random() * 100 + 'vw';
+    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    confetti.style.width = Math.random() * 8 + 6 + 'px';
+    confetti.style.height = confetti.style.width;
+    confetti.style.animationDuration = Math.random() * 2 + 1.5 + 's';
+    confetti.style.opacity = Math.random();
+    document.body.appendChild(confetti);
+    setTimeout(() => { confetti.remove(); }, 3500);
+  }
+}
+
+// --- СТРАНИЦА 3 ---
+const questionData = {
+  dates: { words: [["When", "Where", "How"], ["will", "does", "is"], ["the tour", "BTS", "concert"], ["start", "starts", "beginning"], ["?", "!", "."]], correct: ["When", "will", "the tour", "start", "?"] },
+  cities: { words: [["Which", "What", "Who"], ["cities", "countries", "places"], ["will", "are", "do"], ["they", "BTS", "members"], ["visit?", "visiting?", "go?"]], correct: ["Which", "cities", "will", "they", "visit?"] },
+  tickets: { words: [["How much", "What", "How price"], ["will", "do", "is"], ["the tickets", "price", "entry"], ["cost", "be", "pay"], ["?", "!", "."]], correct: ["How much", "will", "the tickets", "cost", "?"] },
+  setlist: { words: [["What", "Which", "How"], ["songs", "setlist", "music"], ["will", "are", "do"], ["they", "BTS", "perform"], ["?", "!", "."]], correct: ["What", "songs", "will", "they", "perform", "?"] },
+  merch: { words: [["Will", "Is", "Do"], ["there", "it", "merch"], ["be", "have", "is"], ["official merch", "goods", "things"], ["available?", "selling?", "there?"]], correct: ["Will", "there", "be", "official merch", "available?"] }
+};
+let currentCategory = null;
+
+function selectPrompt(card, category) {
+  playSound('click');
+  document.querySelectorAll('.prompt-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  currentCategory = category;
+  const data = questionData[category];
+  for (let i = 1; i <= 5; i++) {
+    const select = document.getElementById(`q-word${i}`);
+    select.innerHTML = `<option value="">[Слово ${i}]</option>`;
+    data.words[i-1].forEach(word => { select.innerHTML += `<option value="${word}">${word}</option>`; });
+  }
+  document.getElementById('question-result').innerText = "Собирай вопрос, выбирая слова в выпадающих списках...";
+  document.getElementById('question-result').style.color = '#fff';
+}
+
+function updateQuestionBuilder() {
+  if (!currentCategory) return;
+  let userWords = [];
+  let allSelected = true;
+  for (let i = 1; i <= 5; i++) {
+    const val = document.getElementById(`q-word${i}`).value;
+    if (val) userWords.push(val); else { userWords.push(`[Слово ${i}]`); allSelected = false; }
+  }
+  const resultDiv = document.getElementById('question-result');
+  resultDiv.innerText = userWords.join(" ");
+  if (allSelected) {
+    const correctArr = questionData[currentCategory].correct;
+    const isCorrect = userWords.every((w, idx) => w === correctArr[idx]);
+    if (isCorrect) { playSound('success'); resultDiv.innerText += "  ✓ (Правильно!)"; resultDiv.style.color = "var(--accent-green)"; }
+    else { playSound('error'); resultDiv.innerText += "  ✗ (Попробуй другой порядок слов)"; resultDiv.style.color = "#ff4d4d"; }
+  }
+}
+</script>
+</body>
+</html>
